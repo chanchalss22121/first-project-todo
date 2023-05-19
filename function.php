@@ -1,32 +1,18 @@
 <?php
-class DataBase
+ob_start();
+class data
 {
-	
-    private static $instance = null;
-    public $pdo;
-	
-    private function __construct()
-    {
-        // Initialize your database connection here
-        $this->pdo = new PDO('mysql:host=localhost;dbname=db3', 'root', '' );
-		
+	private $pdo;
+	public function __construct($host, $dbname, $username , $password)
+	{
+        $dsn = "mysql:host=$host;dbname=$dbname";
+       $this->pdo = new PDO($dsn, $username, $password);
     }
-     public static function getInstance()
-    {
-        if (!isset(self::$instance)) 
-		{
-            self::$instance = new DataBase();
-			
-        }
 
-        return self::$instance;
-    }
-	
 	public function signup($name, $email, $password, $gender, $phone, $address) 
 	{
-	$data = DataBase::getInstance();
 	 $sql = "INSERT INTO tbl_form (name, email, password, gender, phone, address) VALUES (:name, :email, :password, :gender, :phone, :address)";
-        $insert = $data->prepare($sql);
+        $insert = $this->pdo->prepare($sql);
         $insert->bindParam(':name', $name);
         $insert->bindParam(':email', $email);
         $insert->bindParam(':password', $password);
@@ -35,7 +21,7 @@ class DataBase
         $insert->bindParam(':address', $address);
         if ($insert->execute()) {
 			session_start();
-            $user_id = $data->lastInsertId();
+            $user_id = $this->pdo->lastInsertId();
             $_SESSION['id'] = $user_id;
             echo "New record created successfully";
             header('location: welcome.php');
@@ -46,9 +32,8 @@ class DataBase
     
 	 public function login($email, $password) 
 	 {
-		$data = DataBase::getInstance();
 		$sql = "SELECT * FROM tbl_form WHERE email = :email AND password = :password";
-		$login = $data->pdo->prepare($sql);
+		$login = $this->pdo->prepare($sql);
 		$login->bindParam(':email', $email);
 		$login->bindParam(':password', $password);
 		$login->execute();
@@ -67,9 +52,8 @@ class DataBase
 	}
 	public function insertList($listname, $user_id)
     {
-		$data = DataBase::getInstance();
         $sql = "INSERT INTO tbl_list (listname, user_id) VALUES (:listname, :user_id)";
-        $stm = $data->pdo->prepare($sql);
+        $stm = $this->pdo->prepare($sql);
         $stm->bindParam(':listname', $listname);
         $stm->bindParam(':user_id', $user_id);
         if ($stm->execute()) {
@@ -83,9 +67,9 @@ class DataBase
     
     public function insertItem($item, $list_id, $user_id, $color, $rank)
     {
-		$data = DataBase::getInstance();
+		
         $ran = "SELECT MAX(rank) AS max_position FROM tbl_item";
-        $stm = $data->pdo->query($ran);
+        $stm = $this->pdo->query($ran);
         $result = $stm->fetch(PDO::FETCH_ASSOC);
         $maxRank = $result['max_position'];
         // Increment the position value for items placed at the top
@@ -98,7 +82,7 @@ class DataBase
 		}
         
         $sql = "INSERT INTO tbl_item (item, list_id, user_id, color, rank) VALUES (:item, :list_id, :user_id, :color, :newrank)";
-        $stm = $data->pdo->prepare($sql);
+        $stm = $this->pdo->prepare($sql);
         $stm->bindParam(':item', $item);
         $stm->bindParam(':list_id', $list_id);
         $stm->bindParam(':user_id', $user_id);
@@ -114,8 +98,7 @@ class DataBase
 	////// fetch listdata from database ///////
 	 public function getlist($user_id) 
 	{
-		$data = DataBase::getInstance();
-        $stmt = $data->pdo->prepare("SELECT * FROM tbl_list WHERE user_id = :user_id");
+        $stmt = $this->pdo->prepare("SELECT * FROM tbl_list WHERE user_id = :user_id");
         $stmt->bindParam(':user_id', $user_id);
         return $stmt;
     }
@@ -123,33 +106,31 @@ class DataBase
 	////// fetch itemdata from database ///////
 	public function getitem($list_id, $user_id) 
 	{
-		$data = DataBase::getInstance();
-        $itm = $data->pdo->prepare("SELECT * FROM tbl_item WHERE list_id = :list_id AND user_id = :user_id ORDER BY rank DESC");
+        $itm = $this->pdo->prepare("SELECT * FROM tbl_item WHERE list_id = :list_id AND user_id = :user_id ORDER BY rank DESC");
         $itm->bindParam(':list_id', $list_id);
         $itm->bindParam(':user_id', $user_id);
         return $itm;
     }
-	  public function deleteitem($item_id)
-	{
-		 $data = DataBase::getInstance();
-        $stmt = $data->pdo->prepare("DELETE FROM tbl_item WHERE id = :item_id");
+	  public function deleteitem($item_id) {
+        $stmt = $this->pdo->prepare("DELETE FROM tbl_item WHERE id = :item_id");
         $stmt->bindParam(':item_id', $item_id);
         $stmt->execute();
     }
-	public function deletelistitem($id)
-	{	$data = DataBase::getInstance();
-        $stmt1 = $data->pdo->prepare("DELETE FROM tbl_item WHERE list_id = :list_id");
+	public function deletelistitem($id) {
+        $stmt1 = $this->pdo->prepare("DELETE FROM tbl_item WHERE list_id = :list_id");
 		$stmt1->bindParam(':list_id', $listId);
 		$stmt1->execute();
 
-		$stmt2 = $data->pdo->prepare("DELETE FROM tbl_list WHERE id = :id");
+		$stmt2 = $this->pdo->prepare("DELETE FROM tbl_list WHERE id = :id");
 		$stmt2->bindParam(':id', $id);
 		$stmt2->execute();
 		echo 'Deleted successfully.';
     }
 }
-	$data = DataBase::getInstance();
-	
+
+
+	$data = new data('localhost','db3','root','');
+
 	if (isset($_POST['signup'])) {
 		$name = $_POST['name'];
 		$email = $_POST['email'];

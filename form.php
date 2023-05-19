@@ -1,7 +1,5 @@
-<?php
-session_start();
-?>
-
+<?php 
+session_start();?>
 <!DOCTYPE html>
 	<head>
 		<title>Insert data in MySQL database using Ajax</title>
@@ -77,7 +75,7 @@ session_start();
 					if(email!="" && password!="") 
 					{ 
 						$.ajax
-						({
+						({ 
 							type: "POST",
 							url: "database.php",
 							data:
